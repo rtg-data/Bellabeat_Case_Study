@@ -56,13 +56,13 @@ unique(intensities$Id)
 ## Pulled the 33 unique Ids
 ## Get averages of each user, 1:33
 
-user_33 <- intensities %>% 
-  filter(Id == "8877689391")
+#user_33 <- intensities %>% 
+  #filter(Id == "8877689391")
 
-avg_user_33 <- user_33 %>% 
-  summarize(avg_intensity = mean(TotalIntensity))
+#avg_user_33 <- user_33 %>% 
+  #summarize(avg_intensity = mean(TotalIntensity))
 
-as_tibble(avg_user_33)
+#as_tibble(avg_user_33)
 
 ## Create and Save Avg_Intensity Data Frame
 
