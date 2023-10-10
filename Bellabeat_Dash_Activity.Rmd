@@ -1,0 +1,176 @@
+---
+title: "Activity Trends of Fitness Tracker Users"
+output: 
+  flexdashboard::flex_dashboard:
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(dplyr)
+library(readxl)
+library(cowplot)
+library(gridExtra)
+library(gganimate)
+library(ggfortify)
+library(knitr)
+library(flexdashboard)
+library(plotly)
+library(rmarkdown)
+library(tinytex)
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+bmi <- read.csv("bmi.csv")
+daily_activity <- read.csv("daily_activity.csv")
+heartrate <- read.csv("heartrate.csv")
+intensities <- read.csv("hourlyintensities.csv")
+sleep <- read.csv("sleep.csv")
+```
+
+
+
+Column
+-----------------------------------------------------------------------
+
+### Physical Activity Trends
+
+```{r}
+ types_times <- daily_activity %>% 
+  select(Id, LightlyActiveMinutes, FairlyActiveMinutes, VeryActiveMinutes)
+
+p_types_times <- types_times %>% 
+  pivot_longer(2:4, names_to = "Activity_Type", values_to = "Minutes")
+
+Activity_Level_User <- ggplot(p_types_times, aes(x = Id, y = Minutes, color     =Activity_Type,)) +
+  geom_jitter(width = .5, size=1) +
+  facet_wrap(~factor(Activity_Type, levels = c('LightlyActiveMinutes'  ,'FairlyActiveMinutes','VeryActiveMinutes'))) +
+  scale_color_manual(breaks = c("LightlyActiveMinutes", "FairlyActiveMinutes"             ,"VeryActiveMinutes"), values = c("LightlyActiveMinutes"    = "#0000ff",                  "FairlyActiveMinutes" = "#cc0099", "VeryActiveMinutes" = "red")) +
+  labs(title = "Activity Level by User", subtitle = "In Minutes", x = "User(Id)", color =   "Activity Level") +
+  theme(plot.background = element_rect("lightgrey")) +
+  theme(panel.background = element_rect("darkgrey")) 
+
+Activity_Level_User
+```
+
+
+Column {.tabset}
+-----------------------------------------------------------------------
+
+### Activity Intensity
+
+```{r}
+Id <- c(1503960366, 1624580081, 1644430081, 1844505072, 1927972279, 2022484408, 2026352035, 2320127002, 2347167796, 2873212765, 3372868164, 3977333714, 4020332650, 4057192912, 4319703577, 4388161847, 4445114986, 4558609924, 4702921684, 5553957443, 5577150313, 6117666160, 6290855005, 6775888955, 6962181067, 7007744171, 7086361926, 8053475328, 8253242879, 8378563200, 8583815059, 8792009665, 887768939)
+
+Intensity <- c(16.2, 8.1, 10.5, 5, 1.8, 17, 17, 8.7,
+               14.5, 15.1, 15.4, 15.2, 4.36, 4.9, 11.3, 14.3,
+               9.79, 14.4, 12.9, 12.8, 19.9, 12.5, 10.6, 4.37, 
+               14.9, 17.6, 13.6, 17.9, 9.11, 14.9, 9.13, 4.43,
+               19.1)
+
+Avg_Intensity <- data.frame(Id, Intensity)
+
+
+Intensity_Plot <- ggplot(Avg_Intensity, aes(x =Id, y = Intensity, color = Intensity)) +
+  geom_point(size=2.5) +
+  ylim(0, 20.05)+
+  geom_hline(yintercept = mean(Intensity), color="red") +
+  geom_smooth() +
+  theme(plot.background = element_rect("lightgrey")) +
+  theme(panel.background = element_rect("darkgrey")) +
+  scale_colour_gradient(low = "blue", high = "red") +
+  labs(title = "Average Intensity", subtitle = "By User", x = "User (Id)", y = "Intensity     Score")
+
+Intensity_Plot
+```
+
+
+### Calories
+
+```{r}
+cal <- daily_activity %>% 
+  select(Calories, LightlyActiveMinutes, FairlyActiveMinutes, VeryActiveMinutes)
+
+
+piv_cal <- cal %>% 
+  pivot_longer(2:4, names_to = "Activity_Level", values_to = "Minutes")
+
+
+Calories <- ggplot(piv_cal, aes(x = Minutes, y = Calories, color = Activity_Level)) +
+  geom_jitter(width = .5, size=.75) +
+  facet_wrap(~factor(Activity_Level, levels = c('LightlyActiveMinutes'                      ,'FairlyActiveMinutes'   , 'VeryActiveMinutes'))) +
+  scale_color_manual(breaks = c("LightlyActiveMinutes", "FairlyActiveMinutes"              ,"VeryActiveMinutes"), values = c("LightlyActiveMinutes"    = "#0000ff",                 "FairlyActiveMinutes" = "#cc0099", "VeryActiveMinutes" =   "red")) +
+  labs(title = "Calories Burned", subtitle = "By Activity Level", color = "Activity Level")+
+  theme(plot.background = element_rect("lightgrey")) +
+  theme(panel.background = element_rect("darkgrey")) 
+
+Calories
+```
+
+### BMI Changes
+
+```{r}
+BMI <- merge(daily_activity, bmi) %>% 
+  select(BMI, SedentaryMinutes, LightlyActiveMinutes, FairlyActiveMinutes, VeryActiveMinutes   ) %>% 
+  arrange(BMI)
+  
+
+piv_BMI <- BMI %>% 
+  pivot_longer(2:4, names_to = "Activity_Level", values_to = "Minutes")
+  
+
+BMI_Activity <- ggplot(piv_BMI, aes(x = Minutes, y = BMI, color = Activity_Level)) +
+  geom_jitter(width = .5, size=1) +
+  geom_hline(yintercept = 24.9, color="black", size = 1.5) +
+  geom_hline(yintercept = 30, color="black", size = 1.5) +
+  scale_color_manual(breaks = c("SedentaryMinutes", "LightlyActiveMinutes",                   "FairlyActiveMinutes"), values = c("SedentaryMinutes" = "#0000ff", 
+  "LightlyActiveMinutes" = "#cc0099", "FairlyActiveMinutes" = "red")) +
+  labs(title = "Activity Level and BMI", color = "Activity Level") +
+  annotate("text", x=1150, y=29, label="BMI over 24.9 is Overweight (CDC)", color="black" , 
+  size=3.5, fontface = "bold") +
+  annotate("text", x=1077, y=32, label="BMI over 30 is Obese (CDC)", color="black", 
+  size=3.5, fontface = "bold") +
+  theme(plot.background = element_rect("lightgrey")) +
+  theme(panel.background = element_rect("darkgrey")) 
+
+BMI_Activity
+```
+
+
+### Weekly Trends
+
+```{r}
+day_daily_activity <- separate(daily_activity, ActivityDate, into = c('Day', 'Date', 'Year'), sep = ',')
+
+Day_Activity <- day_daily_activity %>% 
+  select(Day)
+
+Daily_Plot <- ggplot(Day_Activity, aes(x = factor(Day, level = c('Sunday', 'Monday',          'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday')), fill = Day)) +
+  geom_bar(stat="count", position = "dodge") + 
+  scale_fill_manual(breaks=c('Sunday','Monday','Tuesday','Wednesday','Thursday','Friday'   ,'Saturday'), values = c("Sunday" = "#0000ff", "Monday" = "#0000ff", "Tuesday" =         "#cc0099"   , "Wednesday" = "#cc0099", "Thursday" = "#cc0099", "Friday" = "#0000ff",     "Saturday" =  "#0000ff")) +
+  labs(title="Activity Reporting", subtitle="By Day of Week", x="Day") +
+  theme(plot.background = element_rect("lightgrey")) +
+  theme(panel.background = element_rect("darkgrey")) 
+
+Daily_Plot
+```
+
+
+### Daily Trends
+
+```{r}
+level_order <- c("12:00 AM", "1:00 AM", "2:00 AM", "3:00 AM", "4:00 AM", "5:00 AM", "6:00 AM", "7:00 AM", "8:00 AM", "9:00 AM", "10:00 AM", "11:00 AM", "12:00 PM", "1:00 PM", "2:00 PM", "3:00 PM", "4:00 PM", "5:00 PM", "6:00 PM", "7:00 PM", "8:00 PM", "9:00 PM", "10:00 PM", "11:00 PM")
+
+Hrly_Activity <- ggplot(intensities, aes(x = factor(ActivityHour, levels = level_order),   y = AverageIntensity, fill = AverageIntensity)) +
+  geom_col(position = "dodge") +
+  scale_fill_gradient(low = "blue", high = "red") +
+  labs(title = "Intensity of Activity", subtitle = "By Hour", x = "Time", y = 
+  "Avg Intensity", fill = "Intensity Level" ) +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5)) +
+  theme(plot.background = element_rect("lightgrey")) +
+  theme(panel.background = element_rect("darkgrey"))
+
+Hrly_Activity
+```
+
